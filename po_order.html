@@ -1,150 +1,274 @@
-<!DOCTYPE html>
-<html>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
-<head>
-    <title>Purchase Order Entry</title>
-</head>
-<style>
-table, td, th {
-    border: 1.5px solid black;
+Skip to content
+This repository
+Search
+Pull requests
+Issues
+Marketplace
+Explore
+ @NehaSehrawat2
+ Sign out
+ Watch 0
+  Star 0  Fork 0 santhoshbalajibaskarwipro/Airbus
+ Code  Issues 0  Pull requests 0  Projects 0  Wiki  Insights
+Branch: master Find file Copy pathAirbus/create_po/create_po.go
+9e89663  an hour ago
+@santhoshbalajibaskarwipro santhoshbalajibaskarwipro Update create_po.go
+1 contributor
+RawBlameHistory     
+258 lines (199 sloc)  8.62 KB
+/*/*
+-a-Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license Forms.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0 
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+*/
+
+package main
+
+import (
+"errors"
+"fmt"
+"strconv"
+"encoding/json"
+
+"github.com/hyperledger/fabric/core/chaincode/shim"
+//"github.com/hyperledger/fabric/core/util"
+)
+
+// Po order example simple Chaincode implementation
+type Manage_po_order struct {
 }
 
-table {
-    border-collapse: collapse;
-    width: 50%;
+var approved_po_order_entry = "approved_po_order_entry"	
+type po_order struct{
+								// Attributes of a Form 
+	sap_po_order string `json:"sap_po_order"`	
+	supplier string `json:"supplier"`
+	venderso string `json:"venderso"`
+	
+	
 }
 
-th {
-    height: 20px;
-}
-td {
-    height: 20px;
-	width : 20%;
-}
-</style>
-
-<body ng-app="myApp" ng-controller="userCtrl">
-
-<h1 align="center">Purchase Order Entry</h1>
-<button ng-click="new_po_entry()" class="w3-btn w3-green w3-ripple" >New PO Entry </button>
-
-<br>
-<br>
-<br>
-<table  ng-show="table_show" align = "center" >
-  <tr>
-    <th>Wipro Order Reference</th>
-     <td><input   name = "wipro_order_reference" ng-model="wipro_order_reference"  required></td>
-  </tr>
-  
-  <tr>
-    <th>SAP PO Number</th>
-     <td><input type="text" name = "sap_po_order" ng-model="sap_po_order" ></td>
-  </tr>
- 
-  <tr>
-    <th>Supplier </th>
-     <td><input type="text" name = "supplier" ng-model="supplier" ></td>
-  </tr>
-  <tr>
-    <th>VendorSO</th>
-     <td><input type="text" name = "vendorso" ng-model="venderso" ></td>
-  </tr>
-  <tr>
-    <th>Purchase Order Date</th>
-     <td><input type="date" name = "purchase_order_date" ng-model="purchase_order_date" ></td>
-  </tr>
-    <tr>
-    <th>Linked to Proposal ID</th>
-     <td><input type="text" name ="linked_to_proposal_id" ng-model="linked_to_proposal_id" ></td>
-  </tr>
-    <tr>
-    <th>Buyer</th>
-     <td><input type="text" name ="buyer" ng-model="buyer"  ></td>
-  </tr>
-    <tr>
-    <th>Ship To Location</th>
-     <td><input type="text"  name ="ship_to_location" ng-model="ship_to_location"   ></td>
-  </tr>
-    <tr>
-    <th>Ship to City </th>
-     <td><input type="text" name ="ship_to_city" ng-model="ship_to_city"   ></td>
-  </tr>
-    <tr>
-    <th>Device Qty </th>
-     <td><input type="number" name ="device_qty" ng-model="device_qty"   ></td>
-  </tr>
-    <tr>
-    <th>Accessary/Periperal Qty </th>
-     <td><input type="number" name ="accessary_periperal_qty" ng-model="accessary_periperal_qty"   ></td>
-  </tr>
-  </tr>
-    <tr>
-    <th>Total Qty </th>
-     <td><input type="number" name ="total_qty" ng-model="total_qty"  ></td>
-  </tr>
-  </tr>
-    <tr>
-    <th>Status</th>
-     <td align = "center "><b>ORDERED</b></td>
-  </tr>
-  </table>
-  
-
-<br>
 
 
- <button ng-show="table_show" class="w3-btn w3-red w3-ripple" ng-click="submitbutton()" style="float: right;" >Submit </button>
 
 
-<script>
-var app = angular.module('myApp', []);
-app.controller('userCtrl', function($scope) {
-
-$scope.table_show = false ;
-	$scope.new_po_entry = function() {
-	$scope.table_show = !$scope.table_show ;
+// ============================================================================================================================
+// Main - start the chaincode for Form management
+// ============================================================================================================================
+func main() {			
+	err := shim.Start(new(Manage_po_order))
+	if err != nil {
+		fmt.Printf("Error starting Form management of po order chaincode: %s", err)
 	}
-    $scope.submitbutton = function() {
-        if(!($scope.wipro_order_reference && $scope.sap_po_order && $scope.supplier && $scope.venderso && $scope.linked_to_proposal_id && 
-		$scope.buyer && $scope.ship_to_location && $scope.ship_to_city && $scope.device_qty && $scope.accessary_periperal_qty && 
-		$scope.total_qty ))
-		{
-		alert("Enter all the fields");
-			return;
-			}
-			
-			/* var obj = new Object();
-   obj.name = "Raj";
-   obj.age  = 32;
-   obj.married = false;
-   var jsonString= JSON.stringify(obj);*/
-   
-   var po_order_obj = new Object () ;
-   po_order_obj.wipro_order_reference = $scope.wipro_order_reference ;
-   po_order_obj.sap_po_order = $scope.sap_po_order ;
-   po_order_obj.supplier = $scope.supplier ;
-   po_order_obj.venderso = $scope.venderso ;
-   po_order_obj.purchase_order_date = $scope.purchase_order_date.toLocaleDateString() ;
-   po_order_obj.linked_to_proposal_id = $scope.linked_to_proposal_id ;
-   po_order_obj.buyer = $scope.buyer ;
-   po_order_obj.ship_to_location = $scope.ship_to_location ;
-   po_order_obj.ship_to_city = $scope.ship_to_city ;
-   po_order_obj.device_qty = $scope.device_qty ;
-   po_order_obj.accessary_periperal_qty = $scope.accessary_periperal_qty ;
-   po_order_obj.total_qty = $scope.total_qty ;
-   po_order_obj.status = "ORDERED";
- 
-   var po_order_jsonstring = JSON.stringify(po_order_obj);
-   alert(po_order_jsonstring);
-
-		alert(" Submitted successfully ");
-    };
-    
-});
-</script>
+}
 
 
-</body>
-</html>
+
+
+
+// ============================================================================================================================
+// Init - reset all the things
+// ============================================================================================================================
+func (t *Manage_po_order) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	var msg string
+	var err error
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 1")
+	}
+	// Initialize the chaincode
+	msg = args[0]
+	fmt.Println("Manage Po Order chaincode is deployed successfully.");
+	
+	// Write the state to the ledger
+	err = stub.PutState("abc", []byte(msg))	//making a test var "abc", I find it handy to read/write to it right away to test the network
+	if err != nil {
+		return nil, err
+	}
+	var po_order_form_empty []string
+	po_order_form_empty_json_as_bytes, _ := json.Marshal(po_order_form_empty)								//marshal an emtpy array of strings to clear the index
+	err = stub.PutState(approved_po_order_entry, po_order_form_empty_json_as_bytes)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+
+
+
+// ============================================================================================================================
+// Run - Our entry Formint for Invocations - [LEGACY] obc-peer 4/25/2016
+// ============================================================================================================================
+func (t *Manage_po_order) Run(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	fmt.Println("run is running " + function)
+	return t.Invoke(stub, function, args)
+}
+
+
+
+
+// ============================================================================================================================
+// Invoke - Our entry Formint for Invocations
+// ============================================================================================================================
+func (t *Manage_po_order) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	fmt.Println("invoke is running " + function)
+
+	// Handle different functions
+	if function == "init" {													//initialize the chaincode state, used as reset
+		return t.Init(stub, "init", args)
+	} else if function == "create_po_order_id" {											//create a new Form
+		return t.create_po_order_id(stub, args)
+	} 
+	fmt.Println("invoke did not find func: " + function)	
+	jsonResp := "Error : Received unknown function invocation: "+ function 				//error
+	return nil, errors.New(jsonResp)
+}
+
+
+
+// ============================================================================================================================
+// Query - Our entry for Queries
+// ============================================================================================================================
+func (t *Manage_po_order) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	fmt.Println("Query is running " + function)
+
+	// Handle different functions
+	if function == "get_all_po_order" {													//Read all Forms
+		return t.get_all_po_order(stub, args)
+	} 
+
+	fmt.Println("query did not find func: " + function)				//error
+	jsonResp := "Error : Received unknown function query: "+ function 
+	return nil, errors.New(jsonResp)
+}
+
+
+
+func (t *Manage_po_order) create_po_order_id(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var err error
+	if len(args) != 3 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 9")
+	}
+	fmt.Println("Creating a new Form for po order id ")
+	if len(args[0]) <= 0 {
+		return nil, errors.New("1st argument must be a non-empty string")
+	}
+	if len(args[1]) <= 0 {
+		return nil, errors.New("2nd argument must be a non-empty string")
+	}
+	if len(args[2]) <= 0 {
+		return nil, errors.New("3rd argument must be a non-empty string")
+	}
+	
+	
+	sap_po_order := args[0]
+	supplier := args[1]
+	venderso := args[2]
+		
+	
+		
+	//build the Form json string manually
+	input := 	`{`+
+		`"sap_po_order": "` + sap_po_order + `" , `+
+		`"supplier": "` + supplier + `" , `+ 
+		`"venderso": "` + venderso + `"`+
+		`}`
+		fmt.Println("input: " + input)
+		fmt.Print("input in bytes array: ")
+		fmt.Println([]byte(input))
+	err = stub.PutState(sap_po_order, []byte(input))									//store Form with FAA_formNumber as key
+	if err != nil {
+		return nil, err
+	}
+	
+
+	
+	po_order_id_FormIndexAsBytes, err := stub.GetState(approved_po_order_entry)
+	if err != nil {
+		return nil, errors.New("Failed to get po order id  Form index")
+	}
+	var po_order_id_FormIndex []string
+	fmt.Print("po_order_id_FormIndexAsBytes: ")
+	fmt.Println(po_order_id_FormIndexAsBytes)
+	
+	json.Unmarshal(po_order_id_FormIndexAsBytes, &po_order_id_FormIndex)							//un stringify it aka JSON.parse()
+	fmt.Print("po_order_id_FormIndex after unmarshal..before append: ")
+	fmt.Println(po_order_id_FormIndex)
+	//append
+	po_order_id_FormIndex = append(po_order_id_FormIndex, sap_po_order)									//add Form transID to index list
+	fmt.Println("! po order  Form index after appending po order id: ", po_order_id_FormIndex)
+	jsonAsBytes, _ := json.Marshal(po_order_id_FormIndex)
+	fmt.Print("jsonAsBytes: ")
+	fmt.Println(jsonAsBytes)
+	err = stub.PutState(approved_po_order_entry, jsonAsBytes)						//store name of Form
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Po order  created successfully.")
+	return nil, nil
+	
+	
+}
+
+
+
+func (t *Manage_po_order) get_all_po_order(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	
+	var jsonProposalResp,errResp string
+	var po_order_id_FormIndex []string
+	fmt.Println("Fetching All po order")
+	var err error
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting single space as an argument")
+	}
+	// fetching all po order
+	po_order_id_FormIndexAsBytes, err := stub.GetState(approved_po_order_entry)
+	if err != nil {
+		return nil, errors.New("Failed to get all po order")
+	}
+	fmt.Print("po_order_id_FormIndexAsBytes : ")
+	fmt.Println(po_order_id_FormIndexAsBytes)
+	json.Unmarshal(po_order_id_FormIndexAsBytes, &po_order_id_FormIndex)								//un stringify it aka JSON.parse()
+	fmt.Print("po_order_id_FormIndex : ")
+	fmt.Println(po_order_id_FormIndex)
+	// Proposal Data
+	jsonProposalResp = "{"
+	for i,val := range po_order_id_FormIndex{
+		fmt.Println(strconv.Itoa(i) + " - looking at " + val + " for all Proposal")
+		valueAsBytes, err := stub.GetState(val)
+		if err != nil {
+			errResp = "{\"Error\":\"Failed to get state for " + val + "\"}"
+			return nil, errors.New(errResp)
+		}
+		fmt.Print("valueAsBytes : ")
+		fmt.Println(valueAsBytes)
+		jsonProposalResp = jsonProposalResp + "\""+ val + "\":" + string(valueAsBytes[:])
+		if i < len(proposal_id_FormIndex)-1 {
+			jsonProposalResp = jsonProposalResp + ","
+		}
+	}
+	fmt.Println("len(po_order_id_FormIndex) : ")
+	fmt.Println(len(po_order_id_FormIndex))
+
+	jsonProposalResp = jsonProposalResp + "}"
+	fmt.Println([]byte(jsonProposalResp))
+	fmt.Println("Fetched All proposal Forms successfully.")
+	return []byte(jsonProposalResp), nil
+}
+
+
+
+
+
